@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard ผลการเบิกจ่ายงบประมาณ สพญ. กรมชลประทาน</title>
+<meta property="og:title" content="Dashboard ผลเบิกจ่ายงบประมาณ สพญ.">
+<meta property="og:description" content="รายงานผลการเบิกจ่าย สพญ.1-16 กรมชลประทาน">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --navy:#0b3c66; --navy2:#12558f; --sky:#1e88e5; --aqua:#00acc1;
+  --green:#16a34a; --amber:#f59e0b; --red:#dc2626; --slate:#475569;
+  --bg:#eef3f8; --card:#fff; --line:#dbe5ef; --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans Thai',sans-serif;background:var(--bg);color:#0f172a;font-size:14px}
+.wrap{max-width:1560px;margin:0 auto;padding:0 18px 48px}
+
+/* ---------- Header ---------- */
+header{background:linear-gradient(120deg,var(--navy) 0%,var(--navy2) 55%,var(--aqua) 140%);color:#fff;padding:20px 0 0}
+.hd{max-width:1560px;margin:0 auto;padding:0 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.logo{width:50px;height:50px;border-radius:12px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:24px}
+.hd h1{font-size:20px;font-weight:800;line-height:1.3}
+.hd p{font-size:12.5px;opacity:.85}
+.hd .right{margin-left:auto;text-align:right;font-size:12.5px;opacity:.92;min-width:230px}
+.tabs{max-width:1560px;margin:16px auto 0;padding:0 18px;display:flex;gap:6px;flex-wrap:wrap}
+.tab{padding:11px 22px;border-radius:12px 12px 0 0;background:rgba(255,255,255,.14);color:#fff;
+     border:0;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;transition:.15s}
+.tab:hover{background:rgba(255,255,255,.26)}
+.tab.on{background:var(--bg);color:var(--navy)}
+
+/* ---------- Toolbar ---------- */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0}
+.seg{display:flex;background:#fff;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:9px 16px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:var(--slate)}
+.seg button.on{background:var(--navy);color:#fff}
+input,select,button.btn{font-family:inherit;font-size:13.5px}
+input,select{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;width:100%}
+input:focus,select:focus{outline:2px solid #bfdbfe;border-color:var(--sky)}
+.btn{padding:9px 18px;border:0;border-radius:10px;background:var(--navy);color:#fff;cursor:pointer;font-weight:600}
+.btn:hover{filter:brightness(1.12)}
+.btn.g{background:var(--green)} .btn.r{background:var(--red)} .btn.o{background:var(--amber)}
+.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--line)}
+
+/* ---------- Cards ---------- */
+.grid{display:grid;gap:14px}
+.k4{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.k3{grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;
+      box-shadow:0 1px 3px rgba(15,40,70,.06)}
+.kpi .lbl{font-size:12.5px;color:var(--slate);font-weight:600;display:flex;align-items:center;gap:7px}
+.kpi .val{font-size:26px;font-weight:800;margin:6px 0 2px;letter-spacing:-.4px}
+.kpi .sub{font-size:11.5px;color:#94a3b8}
+.dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+.bar{height:7px;border-radius:99px;background:#e9eef5;overflow:hidden;margin-top:10px}
+.bar>i{display:block;height:100%;border-radius:99px;transition:width .5s}
+.sec-title{font-size:15px;font-weight:800;color:var(--navy);margin:22px 0 10px;
+           display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.sec-title small{font-weight:500;color:var(--slate);font-size:12px}
+.pill{background:#e8f1fb;color:var(--navy2);padding:3px 11px;border-radius:99px;font-size:11.5px;font-weight:700}
+
+/* ---------- Breadcrumb ---------- */
+.crumb{display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--line);
+       border-radius:11px;padding:10px 14px;font-size:13px}
+.crumb a{color:var(--sky);cursor:pointer;font-weight:600;text-decoration:none}
+.crumb a:hover{text-decoration:underline}
+.crumb span.sep{color:#cbd5e1}
+
+/* ---------- Table ---------- */
+.tbox{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13.2px;white-space:nowrap}
+thead th{background:var(--navy);color:#fff;padding:11px 12px;text-align:right;font-weight:600;position:sticky;top:0;z-index:2}
+thead th:first-child{text-align:left}
+tbody td{padding:10px 12px;border-bottom:1px solid #eef2f7;text-align:right}
+tbody td:first-child{text-align:left;white-space:normal;min-width:260px}
+tbody tr:hover{background:#f6fafe}
+tbody tr.drill td:first-child{color:var(--navy2);font-weight:600;cursor:pointer}
+tbody tr.drill td:first-child:hover{text-decoration:underline}
+tfoot td{padding:12px;font-weight:800;background:#f1f6fb;border-top:2px solid var(--navy);text-align:right}
+tfoot td:first-child{text-align:left}
+.badge{padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:700;color:#fff;display:inline-block;min-width:62px;text-align:center}
+.tag{font-size:10.5px;padding:2px 7px;border-radius:5px;font-weight:700;margin-left:6px}
+.tag.n{background:#dbeafe;color:#1d4ed8}
+.tag.l{background:#fef3c7;color:#b45309}
+.mini{height:6px;width:82px;border-radius:99px;background:#e9eef5;display:inline-block;overflow:hidden;vertical-align:middle}
+.mini>i{display:block;height:100%}
+
+/* ---------- Form ---------- */
+.frow{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.fld label{display:block;font-size:12px;font-weight:700;color:var(--slate);margin-bottom:5px}
+.hint{font-size:12px;color:var(--slate);line-height:1.75}
+.warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:10px 14px;border-radius:11px;font-size:12.5px;margin-bottom:12px}
+.hide{display:none!important}
+canvas{max-height:300px}
+
+@media(max-width:900px){
+  #chartRow{grid-template-columns:1fr!important}
+  .hd h1{font-size:17px}
+  .hd .right{margin-left:0;text-align:left}
+}
+@media print{header,.tabs,.toolbar,.no-print{display:none!important}body{background:#fff}.card{box-shadow:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd">
+    <div class="logo">💧</div>
+    <div>
+      <h1>Dashboard รายงานผลการดำเนินการเบิกจ่ายงบประมาณ</h1>
+      <p>สำนักพัฒนาแหล่งน้ำขนาดใหญ่ (สพญ.) · กรมชลประทาน</p>
+    </div>
+    <div class="right">
+      <b id="asof">—</b><br><span id="rowcount"></span>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" data-tab="fy70">📊 งบประมาณ ปี พ.ศ. 2570</button>
+    <button class="tab" data-tab="fy69">📁 กันเหลื่อมปี พ.ศ. 2569</button>
+    <button class="tab" data-tab="entry">✏️ คีย์ข้อมูล</button>
+    <button class="tab" data-tab="io">⚙️ นำเข้า / ส่งออก</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ============ DASHBOARD ============ -->
+<section id="pane-dash">
+  <div class="toolbar">
+    <div class="seg" id="scopeSeg"></div>
+    <div style="width:230px"><input id="q" placeholder="🔍 ค้นหาโครงการ / งานย่อย"></div>
+    <div style="width:140px"><select id="sortBy">
+      <option value="budget">เรียง: งบจัดสรร</option>
+      <option value="disb">เรียง: ผลเบิกจ่าย</option>
+      <option value="pct">เรียง: % เบิกจ่าย</option>
+      <option value="name">เรียง: ชื่อ</option>
+    </select></div>
+    <button class="btn ghost" id="btnRefresh">🔄 รีเฟรชข้อมูล</button>
+    <button class="btn ghost" onclick="window.print()">🖨️ พิมพ์รายงาน</button>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+      <span class="hint">เป้าหมายเบิกจ่าย</span>
+      <div style="width:82px"><input id="target" type="number" value="85" min="0" max="100"></div><span class="hint">%</span>
+    </div>
+  </div>
+
+  <div class="sec-title">🏛️ ขั้นที่ 1 · ภาพรวมระดับสำนัก (สพญ.) <span class="pill" id="yearPill"></span></div>
+  <div class="grid k3" id="summaryCards"></div>
+
+  <div class="grid k4" style="margin-top:14px" id="kpiCards"></div>
+
+  <div class="grid" style="grid-template-columns:1.55fr 1fr;margin-top:16px" id="chartRow">
+    <div class="card"><b style="color:var(--navy)">งบจัดสรร เทียบ ผลเบิกจ่าย รายสำนักงานก่อสร้าง</b><canvas id="chBar"></canvas></div>
+    <div class="card"><b style="color:var(--navy)">สัดส่วนโครงสร้างงบประมาณ</b><canvas id="chPie"></canvas></div>
+  </div>
+
+  <div class="sec-title" id="drillTitle"></div>
+  <div class="crumb no-print" id="crumb"></div>
+  <div class="tbox" style="margin-top:10px"><table id="tbl">
+    <thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody><tfoot id="tfoot"></tfoot>
+  </table></div>
+  <p class="hint" style="margin-top:8px">💡 คลิกที่ชื่อแถวเพื่อเจาะลึกลงขั้นถัดไป · หน่วย: บาท</p>
+</section>
+
+<!-- ============ ENTRY ============ -->
+<section id="pane-entry" class="hide">
+  <div class="sec-title">✏️ บันทึก / แก้ไขข้อมูลรายการงบประมาณ</div>
+  <div class="warn hide" id="onlineWarn">
+    ⚠️ ขณะนี้ระบบดึงข้อมูลจาก Google Sheet การแก้ไขในหน้านี้จะถูกเขียนทับเมื่อรีเฟรช
+    — กรุณาแก้ไขข้อมูลจริงที่ Google Sheet
+  </div>
+  <div class="card">
+    <div class="frow">
+      <div class="fld"><label>ปีงบประมาณ</label><select id="f_year">
+        <option value="fy70">2570 (งบประจำปี)</option><option value="fy69">2569 (กันเหลื่อมปี)</option></select></div>
+      <div class="fld"><label>ประเภทงบ</label><select id="f_type"></select></div>
+      <div class="fld"><label>สำนักงานก่อสร้าง</label><select id="f_office"></select></div>
+      <div class="fld" id="wrapProject"><label>ชื่อโครงการ</label><input id="f_project" placeholder="เช่น โครงการอ่างเก็บน้ำห้วยแม่ประจันต์"></div>
+      <div class="fld"><label>งานก่อสร้างรายย่อย</label><input id="f_item" placeholder="เช่น งานทำนบดินหัวงาน ระยะที่ 1"></div>
+      <div class="fld"><label>งบจัดสรร (บาท)</label><input id="f_budget" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="fld"><label>แผนเบิกจ่ายสะสม (บาท)</label><input id="f_plan" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="fld"><label>ผลเบิกจ่ายจริง (บาท)</label><input id="f_disb" type="number" step="0.01" placeholder="0.00"></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:9px;flex-wrap:wrap">
+      <button class="btn g" id="btnSave">💾 บันทึกรายการ</button>
+      <button class="btn ghost" id="btnClear">ล้างฟอร์ม</button>
+      <span class="hint" id="editNote" style="align-self:center"></span>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div style="width:260px"><input id="q2" placeholder="🔍 ค้นหาในตารางข้อมูล"></div>
+    <select id="fYearView" style="width:210px">
+      <option value="fy70">แสดงปี 2570</option><option value="fy69">แสดงกันเหลื่อมปี 2569</option></select>
+    <button class="btn r" id="btnDelAll" style="margin-left:auto">🗑️ ล้างข้อมูลทั้งปีนี้</button>
+  </div>
+  <div class="tbox"><table>
+    <thead><tr><th style="text-align:left">สำนักงาน / โครงการ / งานย่อย</th><th>ประเภท</th><th>งบจัดสรร</th>
+      <th>แผนสะสม</th><th>เบิกจ่าย</th><th>%</th><th>จัดการ</th></tr></thead>
+    <tbody id="entryBody"></tbody></table></div>
+</section>
+
+<!-- ============ IO ============ -->
+<section id="pane-io" class="hide">
+  <div class="sec-title">⚙️ นำเข้าและส่งออกข้อมูล</div>
+  <div class="grid k3">
+    <div class="card">
+      <b style="color:var(--navy)">📥 นำเข้าจาก Excel / CSV</b>
+      <p class="hint" style="margin:8px 0 12px">เลือกไฟล์ที่มีหัวคอลัมน์ตรงตามรูปแบบด้านล่าง ระบบจะเพิ่มต่อจากข้อมูลเดิม</p>
+      <input type="file" id="fileIn" accept=".xlsx,.xls,.csv">
+      <div style="margin-top:12px"><select id="impYear">
+        <option value="fy70">นำเข้าเป็นปี 2570</option><option value="fy69">นำเข้าเป็นกันเหลื่อมปี 2569</option></select></div>
+    </div>
+    <div class="card">
+      <b style="color:var(--navy)">📤 ส่งออก</b>
+      <p class="hint" style="margin:8px 0 12px">ส่งออกข้อมูลดิบ พร้อมชีตสรุปรายสำนักงาน</p>
+      <button class="btn" id="btnXlsx">⬇️ Excel (.xlsx)</button>
+      <button class="btn ghost" id="btnJson" style="margin-top:8px">⬇️ สำรองข้อมูล (.json)</button>
+      <div style="margin-top:10px"><input type="file" id="fileJson" accept=".json"></div>
+    </div>
+    <div class="card">
+      <b style="color:var(--navy)">🧪 ข้อมูลตัวอย่าง</b>
+      <p class="hint" style="margin:8px 0 12px">สร้างชุดข้อมูลจำลองครบ สพญ.1–16 เพื่อทดสอบการแสดงผล</p>
+      <button class="btn o" id="btnSeed">สร้างข้อมูลตัวอย่าง</button>
+      <button class="btn r" id="btnReset" style="margin-top:8px">ล้างข้อมูลทั้งหมด</button>
+    </div>
+  </div>
+
+  <div class="sec-title">📋 รูปแบบคอลัมน์สำหรับไฟล์นำเข้า / Google Sheet</div>
+  <div class="card"><div class="tbox" style="border:0">
+  <table><thead><tr><th style="text-align:left">คอลัมน์</th><th style="text-align:left">ความหมาย</th><th style="text-align:left">ตัวอย่าง</th></tr></thead>
+  <tbody style="text-align:left">
+    <tr><td><b>office</b></td><td style="text-align:left">สำนักงานก่อสร้าง (1–16 หรือ "สพญ.5")</td><td style="text-align:left">สพญ.5</td></tr>
+    <tr><td><b>type</b></td><td style="text-align:left">ปี 70: <code>normal</code>/<code>land</code> · ปี 69: <code>normal</code>/<code>other</code></td><td style="text-align:left">normal</td></tr>
+    <tr><td><b>project</b></td><td style="text-align:left">ชื่อโครงการ (เฉพาะปี 2570)</td><td style="text-align:left">โครงการอ่างเก็บน้ำน้ำปี้</td></tr>
+    <tr><td><b>item</b></td><td style="text-align:left">งานก่อสร้างรายย่อย</td><td style="text-align:left">งานอาคารระบายน้ำล้น</td></tr>
+    <tr><td><b>budget</b></td><td style="text-align:left">งบจัดสรร (บาท)</td><td style="text-align:left">125000000</td></tr>
+    <tr><td><b>plan</b></td><td style="text-align:left">แผนเบิกจ่ายสะสม (บาท)</td><td style="text-align:left">80000000</td></tr>
+    <tr><td><b>disb</b></td><td style="text-align:left">ผลเบิกจ่ายจริง (บาท)</td><td style="text-align:left">76500000</td></tr>
+  </tbody></table></div></div>
+</section>
+</div>
+
+<script>
+/* ==================== 1) ตั้งค่าเชื่อมต่อ ==================== */
+/* ว่างไว้ = โหมดออฟไลน์ (เก็บในเครื่อง)
+   ใส่ URL = ดึงข้อมูลสดจาก Google Sheet ผ่าน Apps Script */
+const API_URL   = '';      // เช่น 'https://script.google.com/macros/s/AKfy.../exec'
+const CACHE_MIN = 5;       // นาที
+const ONLINE    = API_URL.trim().length > 0;
+
+/* ==================== 2) CONFIG ==================== */
+const OFFICES = Array.from({length:16},(_,i)=>'สพญ.'+(i+1));
+const CFG = {
+  fy70:{ label:'ปีงบประมาณ พ.ศ. 2570', altKey:'land',  altName:'ค่าที่ดิน',
+         levels:['office','project','item'],
+         levelName:['สำนักงานก่อสร้างชลประทานขนาดใหญ่','ชื่อโครงการ','งานก่อสร้างรายย่อย'],
+         scopes:[['all','รวมทั้งสิ้น'],['ex','หักค่าที่ดิน'],['only','เฉพาะค่าที่ดิน']] },
+  fy69:{ label:'งบกันเหลื่อมปี พ.ศ. 2569', altKey:'other', altName:'งบประมาณอื่น',
+         levels:['office','item'],
+         levelName:['สำนักงานก่อสร้างชลประทานขนาดใหญ่','งานก่อสร้างรายย่อย'],
+         scopes:[['all','รวมทั้งสิ้น'],['ex','หักงบประมาณอื่น'],['only','เฉพาะงบประมาณอื่น']] }
+};
+const state = { tab:'fy70', year:'fy70', scope:'all', path:[], editId:null };
+let DB = { fy70:[], fy69:[] }, charts = {};
+
+/* ==================== 3) UTILS ==================== */
+const $  = s => document.querySelector(s);
+const $ = s => [...document.querySelectorAll(s)];
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const num = v => { const n = parseFloat(String(v??'').replace(/,/g,'')); return isFinite(n)?n:0; };
+const fmt = v => num(v).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtS = v => { const n=num(v);
+  if(Math.abs(n)>=1e9) return (n/1e9).toFixed(2)+' พันล้าน';
+  if(Math.abs(n)>=1e6) return (n/1e6).toFixed(2)+' ล้าน';
+  return n.toLocaleString('th-TH',{maximumFractionDigits:0}); };
+const pct = (a,b) => b>0 ? (a/b*100) : 0;
+const colorOf = p => { const t=num($('#target').value); return p>=t?'var(--green)':p>=t*0.8?'var(--amber)':'var(--red)'; };
+const setBanner = t => $('#asof').textContent = t;
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function saveLocal(){ if(!ONLINE) localStorage.setItem('rid_sapaya_db', JSON.stringify(DB)); }
+function loadLocal(){ try{ const d=JSON.parse(localStorage.getItem('rid_sapaya_db')); if(d&&d.fy70) DB=d; }catch(e){} }
+
+/* ==================== 4) AGGREGATION ==================== */
+function scoped(year, scope){
+  const alt = CFG[year].altKey;
+  let rows = DB[year] || [];
+  if(scope==='ex')   rows = rows.filter(r=>r.type!==alt);
+  if(scope==='only') rows = rows.filter(r=>r.type===alt);
+  return rows;
+}
+function sum(rows){
+  return rows.reduce((a,r)=>({budget:a.budget+num(r.budget), plan:a.plan+num(r.plan), disb:a.disb+num(r.disb)}),
+                     {budget:0,plan:0,disb:0});
+}
+function groupBy(rows, key){
+  const m = new Map();
+  rows.forEach(r=>{ const k = (r[key]||'(ไม่ระบุ)'); if(!m.has(k)) m.set(k,[]); m.get(k).push(r); });
+  return m;
+}
+function officeOrder(a,b){ const n = s => num(String(s).replace(/\D/g,'')); return n(a)-n(b); }
+
+/* ==================== 5) RENDER : ขั้นที่ 1 ==================== */
+function renderSummary(){
+  const y = state.year, C = CFG[y];
+  $('#yearPill').textContent = C.label;
+  const all = sum(DB[y]), ex = sum(scoped(y,'ex')), only = sum(scoped(y,'only'));
+  const box = (title, sub, d, accent) => {
+    const p = pct(d.disb,d.budget);
+    return `<div class="card kpi">
+      <div class="lbl"><span class="dot" style="background:${accent}"></span>${title}</div>
+      <div class="val" style="color:${accent}">${fmt(d.budget)}</div>
+      <div class="sub">${sub}</div>
+      <div style="display:flex;justify-content:space-between;margin-top:11px;font-size:12.5px">
+        <span>เบิกจ่าย <b>${fmt(d.disb)}</b></span>
+        <span style="color:${colorOf(p)};font-weight:800">${p.toFixed(2)}%</span></div>
+      <div class="bar"><i style="width:${Math.min(p,100)}%;background:${colorOf(p)}"></i></div>
+      <div class="sub" style="margin-top:7px">คงเหลือ ${fmt(d.budget-d.disb)} บาท</div>
+    </div>`;
+  };
+  $('#summaryCards').innerHTML =
+    box('สพญ. (รวมทั้งหมด)', 'งบประมาณรวม สพญ.1–16 ทุกประเภท', all, 'var(--navy)') +
+    box(`สพญ. (หัก${C.altName})`, 'เฉพาะงบปกติของ สพญ.1–16', ex, 'var(--sky)') +
+    box(`เฉพาะ${C.altName}`, `แยกแสดง${C.altName} (ดูรายสำนักงานได้ด้านล่าง)`, only, 'var(--amber)');
+
+  const cur = sum(scoped(y, state.scope));
+  const p = pct(cur.disb, cur.budget), pp = pct(cur.disb, cur.plan);
+  const kpi = (lbl,val,sub,col,barp) => `<div class="card kpi"><div class="lbl">${lbl}</div>
+    <div class="val" style="color:${col}">${val}</div><div class="sub">${sub}</div>
+    ${barp!=null?`<div class="bar"><i style="width:${Math.min(barp,100)}%;background:${col}"></i></div>`:''}</div>`;
+  const scopeName = C.scopes.find(s=>s[0]===state.scope)[1];
+  $('#kpiCards').innerHTML =
+    kpi('💰 งบจัดสรร ('+scopeName+')', fmtS(cur.budget), fmt(cur.budget)+' บาท', 'var(--navy)') +
+    kpi('✅ ผลเบิกจ่ายสะสม', fmtS(cur.disb), p.toFixed(2)+'% ของงบจัดสรร', colorOf(p), p) +
+    kpi('📉 คงเหลือ', fmtS(cur.budget-cur.disb), fmt(cur.budget-cur.disb)+' บาท', 'var(--slate)') +
+    kpi('🎯 เทียบแผนเบิกจ่าย', (cur.plan?pp.toFixed(2):'—')+'%',
+        cur.plan? (cur.disb>=cur.plan?'สูงกว่าแผน '+fmtS(cur.disb-cur.plan):'ต่ำกว่าแผน '+fmtS(cur.plan-cur.disb))
+                : 'ยังไม่ได้บันทึกแผน', cur.disb>=cur.plan?'var(--green)':'var(--red)', pp);
+}
+
+/* ==================== 6) RENDER : CHARTS ==================== */
+function renderCharts(){
+  const y = state.year, C = CFG[y];
+  const rows = scoped(y, state.scope);
+  const g = [...groupBy(rows,'office')].sort((a,b)=>officeOrder(a[0],b[0]));
+  const labels = g.map(x=>x[0]), bud = g.map(x=>sum(x[1]).budget/1e6), dis = g.map(x=>sum(x[1]).disb/1e6);
+
+  charts.bar?.destroy();
+  charts.bar = new Chart($('#chBar'),{ type:'bar',
+    data:{labels,datasets:[
+      {label:'งบจัดสรร (ล้านบาท)',data:bud,backgroundColor:'#cfe0f2',borderRadius:5},
+      {label:'ผลเบิกจ่าย (ล้านบาท)',data:dis,backgroundColor:'#12558f',borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'Noto Sans Thai',size:11}}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y.toLocaleString('th-TH',{maximumFractionDigits:2})}}},
+      scales:{x:{ticks:{font:{family:'Noto Sans Thai',size:10}}},
+              y:{ticks:{font:{family:'Noto Sans Thai',size:10}},grid:{color:'#eef2f7'}}}}});
+
+  const ex = sum(scoped(y,'ex')), only = sum(scoped(y,'only'));
+  charts.pie?.destroy();
+  charts.pie = new Chart($('#chPie'),{ type:'doughnut',
+    data:{labels:['งบปกติ สพญ.1–16', C.altName],
+      datasets:[{data:[ex.budget/1e6, only.budget/1e6],backgroundColor:['#12558f','#f59e0b'],borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{position:'bottom',labels:{font:{family:'Noto Sans Thai',size:11},padding:14}},
+        tooltip:{callbacks:{label:c=>c.label+': '+c.parsed.toLocaleString('th-TH',{maximumFractionDigits:2})+' ล้านบาท'}}}}});
+}
+
+/* ==================== 7) RENDER : DRILL TABLE (ขั้น 2-4) ==================== */
+function renderTable(){
+  const y = state.year, C = CFG[y], lv = state.path.length;
+  const keys = C.levels, key = keys[lv];
+
+  let rows = scoped(y, state.scope);
+  state.path.forEach((v,i)=> rows = rows.filter(r=>(r[keys[i]]||'(ไม่ระบุ)')===v));
+  const q = $('#q').value.trim().toLowerCase();
+  if(q) rows = rows.filter(r=>[r.office,r.project,r.item].join(' ').toLowerCase().includes(q));
+
+  $('#drillTitle').innerHTML = `🔎 ขั้นที่ ${lv+2} · ${C.levelName[lv]||'รายละเอียด'} ` +
+    `<small>แสดง ${C.scopes.find(s=>s[0]===state.scope)[1]}</small>`;
+
+  let cb = `<a onclick="goPath(0)">🏛️ สพญ. (ภาพรวม)</a>`;
+  state.path.forEach((v,i)=> cb += `<span class="sep">›</span><a onclick="goPath(${i+1})">${esc(v)}</a>`);
+  $('#crumb').innerHTML = cb;
+
+  const isLeaf = !key;
+  const head = ['ลำดับ · '+(C.levelName[lv]||'รายการ'),'งบจัดสรร (บาท)','แผนสะสม (บาท)','ผลเบิกจ่าย (บาท)','คงเหลือ (บาท)','% เบิกจ่าย','ความก้าวหน้า'];
+  $('#thead').innerHTML = head.map((h,i)=>`<th${i===0?' style="text-align:left"':''}>${h}</th>`).join('');
+
+  let list;
+  if(isLeaf){
+    list = rows.map(r=>({name:r.item||'(ไม่ระบุ)', type:r.type, d:sum([r]), children:0}));
+  }else{
+    list = [...groupBy(rows,key)].map(([k,v])=>({name:k, type:null, d:sum(v), children:v.length}));
+    if(key==='office') list.sort((a,b)=>officeOrder(a.name,b.name));
+  }
+
+  const sb = $('#sortBy').value;
+  if(sb==='budget') list.sort((a,b)=>b.d.budget-a.d.budget);
+  if(sb==='disb')   list.sort((a,b)=>b.d.disb-a.d.disb);
+  if(sb==='pct')    list.sort((a,b)=>pct(b.d.disb,b.d.budget)-pct(a.d.disb,a.d.budget));
+  if(sb==='name')   list.sort((a,b)=>String(a.name).localeCompare(String(b.name),'th'));
+
+  $('#tbody').innerHTML = list.length ? list.map((r,i)=>{
+    const p = pct(r.d.disb,r.d.budget), c = colorOf(p);
+    const tag = r.type ? `<span class="tag ${r.type==='normal'?'n':'l'}">${r.type==='normal'?'งบปกติ':CFG[y].altName}</span>` : '';
+    const child = r.children ? `<span class="hint"> · ${r.children} รายการ</span>` : '';
+    const safe = String(r.name).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<tr class="${isLeaf?'':'drill'}" ${isLeaf?'':`onclick="drill('${safe}')"`}>
+      <td>${i+1}. ${esc(r.name)}${tag}${child}</td>
+      <td>${fmt(r.d.budget)}</td><td>${fmt(r.d.plan)}</td><td>${fmt(r.d.disb)}</td>
+      <td>${fmt(r.d.budget-r.d.disb)}</td>
+      <td><span class="badge" style="background:${c}">${p.toFixed(2)}%</span></td>
+      <td><span class="mini"><i style="width:${Math.min(p,100)}%;background:${c}"></i></span></td></tr>`;
+  }).join('') : `<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8">— ยังไม่มีข้อมูลในระดับนี้ —</td></tr>`;
+
+  const t = sum(rows), tp = pct(t.disb,t.budget);
+  $('#tfoot').innerHTML = `<tr><td>รวมทั้งสิ้น (${list.length} รายการ)</td>
+    <td>${fmt(t.budget)}</td><td>${fmt(t.plan)}</td><td>${fmt(t.disb)}</td>
+    <td>${fmt(t.budget-t.disb)}</td><td colspan="2" style="color:${colorOf(tp)}">${tp.toFixed(2)}%</td></tr>`;
+}
+function drill(v){ state.path.push(v); renderTable(); }
+function goPath(n){ state.path = state.path.slice(0,n); renderTable(); }
+
+/* ==================== 8) SCOPE ==================== */
+function renderScopeSeg(){
+  $('#scopeSeg').innerHTML = CFG[state.year].scopes
+    .map(([v,l])=>`<button class="${state.scope===v?'on':''}" onclick="setScope('${v}')">${l}</button>`).join('');
+}
+function setScope(v){ state.scope=v; state.path=[]; renderScopeSeg(); renderAll(); }
+
+/* ==================== 9) ENTRY ==================== */
+function refreshTypeOptions(){
+  const y = $('#f_year').value, C = CFG[y];
+  $('#f_type').innerHTML = `<option value="normal">งบประมาณปกติ (สพญ.1–16)</option><option value="${C.altKey}">${C.altName}</option>`;
+  $('#wrapProject').classList.toggle('hide', y!=='fy70');
+}
+function renderEntryTable(){
+  const y = $('#fYearView').value, q = $('#q2').value.trim().toLowerCase();
+  let rows = DB[y] || [];
+  if(q) rows = rows.filter(r=>[r.office,r.project,r.item].join(' ').toLowerCase().includes(q));
+  rows = [...rows].sort((a,b)=>officeOrder(a.office,b.office)||String(a.project||'').localeCompare(String(b.project||''),'th'));
+  $('#entryBody').innerHTML = rows.length ? rows.map(r=>{
+    const p = pct(num(r.disb),num(r.budget));
+    return `<tr><td><b>${esc(r.office)}</b>${r.project?' › '+esc(r.project):''} › ${esc(r.item||'-')}</td>
+      <td>${r.type==='normal'?'งบปกติ':CFG[y].altName}</td>
+      <td>${fmt(r.budget)}</td><td>${fmt(r.plan)}</td><td>${fmt(r.disb)}</td>
+      <td><span class="badge" style="background:${colorOf(p)}">${p.toFixed(1)}%</span></td>
+      <td><button class="btn ghost" style="padding:5px 11px" onclick="editRow('${y}','${r.id}')">แก้ไข</button>
+          <button class="btn r" style="padding:5px 11px" onclick="delRow('${y}','${r.id}')">ลบ</button></td></tr>`;
+  }).join('') : `<tr><td colspan="7" style="text-align:center;padding:36px;color:#94a3b8">— ยังไม่มีข้อมูล —</td></tr>`;
+}
+function editRow(y,id){
+  const r = (DB[y]||[]).find(x=>x.id===id); if(!r) return;
+  $('#f_year').value=y; refreshTypeOptions();
+  $('#f_type').value=r.type; $('#f_office').value=r.office; $('#f_project').value=r.project||'';
+  $('#f_item').value=r.item||''; $('#f_budget').value=r.budget; $('#f_plan').value=r.plan; $('#f_disb').value=r.disb;
+  state.editId = id; $('#editNote').textContent = '✏️ กำลังแก้ไขรายการเดิม';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function delRow(y,id){ if(!confirm('ยืนยันลบรายการนี้?')) return;
+  DB[y]=DB[y].filter(x=>x.id!==id); saveLocal(); renderEntryTable(); renderAll(); }
+
+$('#btnSave').onclick = ()=>{
+  const y = $('#f_year').value;
+  if(!$('#f_item').value.trim()) return alert('กรุณากรอกชื่องานก่อสร้างรายย่อย');
+  const rec = { id: state.editId||uid(), office:$('#f_office').value, type:$('#f_type').value,
+    project: y==='fy70' ? ($('#f_project').value.trim()||'(ไม่ระบุโครงการ)') : '',
+    item:$('#f_item').value.trim(), budget:num($('#f_budget').value),
+    plan:num($('#f_plan').value), disb:num($('#f_disb').value) };
+  if(state.editId){ const i=DB[y].findIndex(x=>x.id===state.editId); i>-1?DB[y][i]=rec:DB[y].push(rec); }
+  else DB[y].push(rec);
+  state.editId=null; $('#editNote').textContent='✅ บันทึกเรียบร้อย';
+  ['f_item','f_budget','f_plan','f_disb'].forEach(i=>$('#'+i).value='');
+  saveLocal(); renderEntryTable(); renderAll();
+};
+$('#btnClear').onclick = ()=>{ state.editId=null; $('#editNote').textContent='';
+  ['f_project','f_item','f_budget','f_plan','f_disb'].forEach(i=>$('#'+i).value=''); };
+$('#btnDelAll').onclick = ()=>{ const y=$('#fYearView').value;
+  if(confirm('ล้างข้อมูลทั้งหมดของ '+CFG[y].label+' ?')){ DB[y]=[]; saveLocal(); renderEntryTable(); renderAll(); } };
+
+/* ==================== 10) IMPORT / EXPORT ==================== */
+$('#fileIn').onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const y = $('#impYear').value, rd = new FileReader();
+  rd.onload = ev => {
+    const wb = XLSX.read(ev.target.result,{type:'array'});
+    const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+    const alt = CFG[y].altKey; let n=0;
+    raw.forEach(r=>{
+      const off = String(r.office??r['สำนักงาน']??'').trim();
+      if(!off) return;
+      const t = String(r.type??r['ประเภท']??'normal').trim().toLowerCase();
+      DB[y].push({ id:uid(),
+        office: /^\d+$/.test(off) ? 'สพญ.'+off : off,
+        type: (t===alt||t.includes('ที่ดิน')||t.includes('อื่น')) ? alt : 'normal',
+        project: y==='fy70' ? String(r.project??r['โครงการ']??'(ไม่ระบุโครงการ)') : '',
+        item: String(r.item??r['งานย่อย']??'(ไม่ระบุ)'),
+        budget:num(r.budget??r['งบจัดสรร']), plan:num(r.plan??r['แผน']), disb:num(r.disb??r['เบิกจ่าย']) });
+      n++;
+    });
+    saveLocal(); renderEntryTable(); renderAll();
+    alert(`นำเข้าสำเร็จ ${n} รายการ เข้าสู่ ${CFG[y].label}`);
+    e.target.value='';
+  };
+  rd.readAsArrayBuffer(f);
+};
+$('#btnXlsx').onclick = ()=>{
+  const wb = XLSX.utils.book_new();
+  ['fy70','fy69'].forEach(y=>{
+    const d = (DB[y]||[]).map(r=>({ 'สำนักงาน':r.office, 'ประเภทงบ':r.type==='normal'?'งบปกติ':CFG[y].altName,
+      'โครงการ':r.project||'-', 'งานก่อสร้างรายย่อย':r.item, 'งบจัดสรร':num(r.budget),
+      'แผนเบิกจ่ายสะสม':num(r.plan), 'ผลเบิกจ่าย':num(r.disb),
+      'คงเหลือ':num(r.budget)-num(r.disb), '%เบิกจ่าย':+pct(num(r.disb),num(r.budget)).toFixed(2) }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(d), y==='fy70'?'ข้อมูลปี2570':'กันเหลื่อมปี2569');
+    const s = [...groupBy(DB[y]||[],'office')].sort((a,b)=>officeOrder(a[0],b[0])).map(([k,v])=>{
+      const t=sum(v), ex=sum(v.filter(r=>r.type==='normal')), on=sum(v.filter(r=>r.type!=='normal'));
+      return {'สำนักงาน':k,'งบรวม':t.budget,'งบปกติ':ex.budget,[CFG[y].altName]:on.budget,
+        'เบิกจ่ายรวม':t.disb,'%เบิกจ่าย':+pct(t.disb,t.budget).toFixed(2)};
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(s), y==='fy70'?'สรุป2570':'สรุป2569');
+  });
+  XLSX.writeFile(wb,'รายงานเบิกจ่าย_สพญ_'+new Date().toISOString().slice(0,10)+'.xlsx');
+};
+$('#btnJson').onclick = ()=>{
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(DB)],{type:'application/json'}));
+  a.download='backup_สพญ.json'; a.click();
+};
+$('#fileJson').onchange = e => { const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader(); rd.onload=ev=>{ try{ DB=JSON.parse(ev.target.result); saveLocal();
+    renderEntryTable(); renderAll(); alert('กู้คืนข้อมูลสำเร็จ'); }catch(x){ alert('ไฟล์ไม่ถูกต้อง'); } };
+  rd.readAsText(f); };
+
+/* ==================== 11) SEED ==================== */
+const PJ = ['โครงการอ่างเก็บน้ำ','โครงการเขื่อนทดน้ำ','โครงการประตูระบายน้ำ','โครงการคลองผันน้ำ','โครงการสถานีสูบน้ำ'];
+const SUF = ['ห้วยแม่สะเรียง','น้ำปี้','ลำสะพุง','ห้วยโสมง','แม่ตาช้าง','คลองวังโตนด','ลำน้ำชี'];
+const WK = ['งานทำนบดินหัวงาน','งานอาคารระบายน้ำล้น','งานระบบส่งน้ำสายใหญ่ฝั่งซ้าย','งานอาคารท่อส่งน้ำลงลำน้ำเดิม','งานถนนบนคันคลอง'];
+function seed(silent){
+  if(!silent && !confirm('สร้างข้อมูลตัวอย่างทับข้อมูลเดิม?')) return;
+  const R=(a,b)=>Math.round((Math.random()*(b-a)+a)/1000)*1000;
+  DB={fy70:[],fy69:[]};
+  OFFICES.forEach((off,i)=>{
+    for(let p=0;p<2+(i%2);p++){
+      const pj = PJ[(i+p)%PJ.length]+SUF[(i+p)%SUF.length]+' จังหวัดตัวอย่าง';
+      for(let w=0;w<2+(p%2);w++){
+        const b=R(35e6,320e6), pl=Math.round(b*(0.55+Math.random()*0.3));
+        DB.fy70.push({id:uid(),office:off,type:'normal',project:pj,item:WK[w%WK.length]+' ระยะที่ '+(w+1),
+          budget:b,plan:pl,disb:Math.round(pl*(0.72+Math.random()*0.35))});
+      }
+    }
+    const lb=R(8e6,95e6);
+    DB.fy70.push({id:uid(),office:off,type:'land',project:'ค่าที่ดิน '+off,item:'ค่าทดแทนที่ดิน สิ่งปลูกสร้างและพืชผล',
+      budget:lb,plan:Math.round(lb*.7),disb:Math.round(lb*(0.45+Math.random()*0.5))});
+    for(let w=0;w<2;w++){
+      const b=R(12e6,140e6);
+      DB.fy69.push({id:uid(),office:off,type:'normal',project:'',item:'(กันเหลื่อมปี) '+WK[w%WK.length]+' '+off,
+        budget:b,plan:Math.round(b*.85),disb:Math.round(b*(0.55+Math.random()*0.42))});
+    }
+    const ob=R(4e6,55e6);
+    DB.fy69.push({id:uid(),office:off,type:'other',project:'',item:'งบประมาณอื่น '+off,
+      budget:ob,plan:Math.round(ob*.8),disb:Math.round(ob*(0.4+Math.random()*0.55))});
+  });
+  saveLocal(); renderEntryTable(); renderAll();
+  setBanner('🧪 ข้อมูลตัวอย่าง (ยังไม่ได้เชื่อมฐานข้อมูลจริง)');
+}
+$('#btnSeed').onclick = ()=>seed(false);
+$('#btnReset').onclick = ()=>{ if(confirm('ล้างข้อมูลทั้งหมด?')){ DB={fy70:[],fy69:[]}; saveLocal(); renderEntryTable(); renderAll(); } };
+
+/* ==================== 12) TABS ==================== */
+$('.tab').forEach(t=> t.onclick = ()=>{
+  $('.tab').forEach(x=>x.classList.remove('on')); t.classList.add('on');
+  const v = t.dataset.tab; state.tab = v;
+  $('#pane-dash').classList.toggle('hide', v!=='fy70'&&v!=='fy69');
+  $('#pane-entry').classList.toggle('hide', v!=='entry');
+  $('#pane-io').classList.toggle('hide', v!=='io');
+  if(v==='fy70'||v==='fy69'){ state.year=v; state.scope='all'; state.path=[]; renderScopeSeg(); renderAll(); }
+  if(v==='entry') renderEntryTable();
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+['q','sortBy'].forEach(id=> $('#'+id).oninput = renderTable);
+$('#target').oninput = renderAll;
+$('#q2').oninput = renderEntryTable;
+$('#fYearView').onchange = renderEntryTable;
+$('#f_year').onchange = refreshTypeOptions;
+
+/* ==================== 13) MAIN RENDER ==================== */
+function renderAll(){
+  renderSummary(); renderCharts(); renderTable();
+  $('#rowcount').textContent = `ปี 2570: ${(DB.fy70||[]).length} รายการ · กันเหลื่อมปี 2569: ${(DB.fy69||[]).length} รายการ`;
+}
+
+/* ==================== 14) ONLINE DATA SOURCE ==================== */
+async function loadOnline(force){
+  if(!ONLINE){ setBanner('💾 โหมดออฟไลน์ · ข้อมูลเก็บในเครื่องนี้'); return; }
+  const cached = JSON.parse(localStorage.getItem('rid_cache') || 'null');
+  if(!force && cached && Date.now()-cached.t < CACHE_MIN*60000){
+    DB = cached.db; renderAll(); renderEntryTable();
+    setBanner('✅ ข้อมูล (แคช) ' + new Date(cached.t).toLocaleTimeString('th-TH')); return;
+  }
+  try{
+    setBanner('⏳ กำลังโหลดข้อมูล…');
+    const res = await fetch(API_URL,{cache:'no-store'});
+    const d = await res.json();
+    DB = { fy70: d.fy70 || [], fy69: d.fy69 || [] };
+    localStorage.setItem('rid_cache', JSON.stringify({t:Date.now(), db:DB}));
+    renderAll(); renderEntryTable();
+    setBanner('✅ ข้อมูล ณ ' + new Date(d.asOf || Date.now()).toLocaleString('th-TH'));
+  }catch(err){
+    if(cached){ DB = cached.db; renderAll(); renderEntryTable(); setBanner('⚠️ ใช้ข้อมูลแคชล่าสุด'); }
+    else { renderAll(); setBanner('❌ เชื่อมต่อฐานข้อมูลไม่สำเร็จ'); }
+  }
+}
+$('#btnRefresh').onclick = ()=> ONLINE ? loadOnline(true) : (renderAll(), renderEntryTable());
+
+/* ==================== 15) INIT ==================== */
+$('#f_office').innerHTML = OFFICES.map(o=>`<option>${o}</option>`).join('');
+refreshTypeOptions();
+renderScopeSeg();
+
+if(ONLINE){
+  $('#onlineWarn').classList.remove('hide');
+  loadOnline(false);
+  setInterval(()=>loadOnline(true), CACHE_MIN*60000);
+}else{
+  loadLocal();
+  if(!(DB.fy70||[]).length && !(DB.fy69||[]).length) seed(true);
+  else { renderAll(); setBanner('💾 โหมดออฟไลน์ · ข้อมูลเก็บในเครื่องนี้'); }
+  renderEntryTable();
+}
+</script>
+</body>
+</html>
